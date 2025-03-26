@@ -1,6 +1,7 @@
 package desafio.itau.springboot.services;
 
 import desafio.itau.springboot.dto.TransactionDTO;
+import desafio.itau.springboot.interfaces.DeletionStatus;
 import desafio.itau.springboot.interfaces.ITransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,17 +27,27 @@ public class TransactionService implements ITransaction {
     }
 
     @Override
-    public void deleteRecentTransactions() {
-        transactionStore.clear();
-        log.info( "Transação removida: " + transactionStore.size());
+    public Optional<DeletionStatus> deleteRecentTransactions() {
+      if(transactionStore.isEmpty()) {
+          log.info("Não existe transações para remover: " + transactionStore.size());
+          return Optional.of(DeletionStatus.ALREADY_EMPTY);
+      }
+
+      transactionStore.clear();
+
+      log.info("Todas as transações removidas: " + transactionStore.size());
+
+      return Optional.of(DeletionStatus.SUCCESS);
     }
 
     @Override
     public void validateTransaction(TransactionDTO transaction) {
         if (transaction.getValor().compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("Valor da transação inválido!");
 
-        if (transaction.getDataHora().isAfter(OffsetDateTime.now())) throw new IllegalArgumentException("Data da transação inválida");
+        boolean isValidDate = transaction.getDataHora().isAfter(OffsetDateTime.now()) || transaction.getDataHora() != OffsetDateTime.now();
 
-     if(transaction.getDataHora() != OffsetDateTime.now()) throw new IllegalArgumentException("Data da transação inválida");
+        if (isValidDate) {
+            throw new IllegalArgumentException("Data da transação inválida");
+        }
     }
 }

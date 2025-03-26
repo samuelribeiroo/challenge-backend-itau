@@ -1,6 +1,7 @@
 package desafio.itau.springboot.controllers;
 
 import desafio.itau.springboot.dto.TransactionDTO;
+import desafio.itau.springboot.interfaces.DeletionStatus;
 import desafio.itau.springboot.services.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(value =  "/transacao", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -32,10 +34,12 @@ public class TransactionController {
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteAllRecentTransactions() {
-        service.deleteRecentTransactions();
-
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
+    public ResponseEntity<?> deleteAllRecentTransactions() {
+        return service.deleteRecentTransactions().map(status -> {
+               return status == DeletionStatus.SUCCESS
+                       ? ResponseEntity.status(HttpStatus.OK).build()
+                       : ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }).orElseGet(() -> new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR));
+}
 
 }
