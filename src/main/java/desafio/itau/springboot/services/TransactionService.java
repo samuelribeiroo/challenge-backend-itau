@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.MessageFormat;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -30,6 +33,7 @@ public class TransactionService implements ITransaction {
     public Optional<DeletionStatus> deleteRecentTransactions() {
       if(transactionStore.isEmpty()) {
           log.info("Não existe transações para remover: " + transactionStore.size());
+          log.info("Caso não houver deleções a serem feitas e o usuário fazer nova tentativa o endpoint de deleção vai mostrar o status code 400");
           return Optional.of(DeletionStatus.ALREADY_EMPTY);
       }
 
@@ -44,10 +48,14 @@ public class TransactionService implements ITransaction {
     public void validateTransaction(TransactionDTO transaction) {
         if (transaction.getValor().compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("Valor da transação inválido!");
 
-        boolean isValidDate = transaction.getDataHora().isAfter(OffsetDateTime.now()) || transaction.getDataHora() != OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime transactionDateTime = transaction.getDataHora();
 
-        if (isValidDate) {
-            throw new IllegalArgumentException("Data da transação inválida");
-        }
+        /*   Tolerance of up to 1 second before or after.  */
+        boolean isValidDateTime = transactionDateTime.isBefore(now.minusSeconds(1)) || transactionDateTime.isAfter(now.plusSeconds(1));
+
+        String errorMessage = MessageFormat.format("Data inválida para transação. Analise se data/horário é correto. {0}", transactionDateTime);
+
+        if (isValidDateTime) throw new IllegalArgumentException(errorMessage);
     }
 }
