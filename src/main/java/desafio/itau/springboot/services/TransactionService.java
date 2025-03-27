@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -54,8 +52,13 @@ public class TransactionService implements ITransaction {
         /*   Tolerance of up to 1 second before or after.  */
         boolean isValidDateTime = transactionDateTime.isBefore(now.minusSeconds(1)) || transactionDateTime.isAfter(now.plusSeconds(1));
 
-        String errorMessage = MessageFormat.format("Data inválida para transação. Analise se data/horário é correto. {0}", transactionDateTime);
+        String errorMessage = MessageFormat.format("Data inválida para transação: {0}. Data Atual: {1} Analise se data/horário é correto.", transactionDateTime, now);
 
         if (isValidDateTime) throw new IllegalArgumentException(errorMessage);
+    }
+
+    @Override
+    public List<TransactionDTO> getRecentTransactions() {
+        return transactionStore;
     }
 }
